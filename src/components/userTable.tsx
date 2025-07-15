@@ -57,8 +57,8 @@ export default function UserTable() {
   return (
     <div className="w-full px-6 py-2">
       <DataTable
-        title="Users"
-        description="Users registered to the app"
+        title="Agents"
+        description="Agents registered to the app"
         seeAllLink="/agents"
         seeAllText="See All Agents"
         columns={columns}

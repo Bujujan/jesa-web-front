@@ -60,19 +60,19 @@ const data = {
     },
     {
       title: "Projects",
-      url: "/",
+      url: "/admin/dashboard/projets",
       icon: Folder,
       isActive: true, // You can remove this since we calculate dynamically now
     },
     {
       title: "Punches",
-      url: "/",
+      url: "/admin/dashboard/punches",
       icon: Bug,
       isActive: true, // You can remove this since we calculate dynamically now
     },
     {
       title: "Agents",
-      url: "/",
+      url: "/admin/dashboard/agents",
       icon: Users,
       isActive: true, // You can remove this since we calculate dynamically now
     },
