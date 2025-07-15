@@ -43,6 +43,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import JesaLogo from "/public/assets/images/JESA_logo_tr.png"; // adjust path accordingly
+import { NavUser } from "./nav-user";
 
 const data = {
   navMain: [
@@ -53,7 +54,7 @@ const data = {
       isActive: true, // You can remove this since we calculate dynamically now
     },
   ],
-  analytics: [
+  punch: [
     {
       title: "Performance",
       url: "#",
@@ -70,7 +71,7 @@ const data = {
       icon: FileText,
     },
   ],
-  support: [
+  agents: [
     {
       title: "Tickets",
       url: "#",
@@ -125,10 +126,10 @@ export function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <div className="flex flex-row justify-left items-center gap-2">
+            <SidebarMenuButton className="h-full" asChild>
+              <div className="flex flex-col justify-left items-start gap-2">
                 <Image src={JesaLogo} alt="Jesa Logo" width={100} height={32} />
-                <span className="truncate text-xs">Punch Dashboard</span>
+                {/* <span className="truncate text-xs">Punch Dashboard</span> */}
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -156,10 +157,10 @@ export function AppSidebar() {
 
         {/* Analytics */}
         <SidebarGroup>
-          <SidebarGroupLabel>Analytics</SidebarGroupLabel>
+          <SidebarGroupLabel>Punches</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {data.analytics.map((item) => (
+              {data.punch.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)}>
                     <Link href={item.url}>
@@ -175,10 +176,10 @@ export function AppSidebar() {
 
         {/* Support */}
         <SidebarGroup>
-          <SidebarGroupLabel>Support</SidebarGroupLabel>
+          <SidebarGroupLabel>Agents</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {data.support.map((item) => (
+              {data.agents.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)}>
                     <Link href={item.url}>
@@ -198,7 +199,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Shop */}
-        <SidebarGroup>
+        {/* <SidebarGroup>
           <SidebarGroupLabel>Shop</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -214,11 +215,11 @@ export function AppSidebar() {
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
-        </SidebarGroup>
+        </SidebarGroup> */}
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarMenu>
+        {/* <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -243,7 +244,7 @@ export function AppSidebar() {
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
-        </SidebarMenu>
+        </SidebarMenu> */}
 
         <SidebarMenu>
           <SidebarMenuItem>
@@ -254,6 +255,13 @@ export function AppSidebar() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          <NavUser
+            user={{
+              name: "John Doe",
+              email: "0J5fW@example.com",
+              avatar: "https://github.com/shadcn.png",
+            }}
+          />
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>

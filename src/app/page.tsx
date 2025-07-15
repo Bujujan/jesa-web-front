@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import React from "react";
 
 const page = () => {
-  redirect("/auth/signIn");
+  redirect("/admin/dashboard");
 };
 
 export default page;

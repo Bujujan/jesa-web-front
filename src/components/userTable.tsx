@@ -4,6 +4,7 @@
 import * as React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "./DataTable";
+import { Skeleton } from "./ui/skeleton";
 
 type User = {
   id: number;
@@ -51,12 +52,18 @@ export default function UserTable() {
     fetchUsers();
   }, []);
 
-  if (loading) return <p>Loading users...</p>;
+  if (loading) return <Skeleton className="w-full px-6 py-2 h-48" />;
 
   return (
-    <div className="m-30 p-4 w-full">
-      <h1 className="text-2xl font-bold mb-4">User Table</h1>
-      <DataTable columns={columns} data={data} />
+    <div className="w-full px-6 py-2">
+      <DataTable
+        title="Users"
+        description="Users registered to the app"
+        seeAllLink="/agents"
+        seeAllText="See All Agents"
+        columns={columns}
+        data={data}
+      />
     </div>
   );
 }
