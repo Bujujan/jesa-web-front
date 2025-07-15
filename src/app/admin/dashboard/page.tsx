@@ -14,7 +14,7 @@ export default function Home() {
     //   <AppSidebar />
     // </div>
     <SidebarProvider>
-      <div className="flex flex-col w-full mt-20">
+      <div className="flex flex-col w-full mt-6">
         <div>
           <h1 className="text-2xl font-bold pl-8 pb-4">Hello, User!</h1>
         </div>

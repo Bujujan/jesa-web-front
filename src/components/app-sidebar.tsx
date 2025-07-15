@@ -4,11 +4,14 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  Bug,
   Building2,
   Calendar,
   ChevronUp,
   CreditCard,
   FileText,
+  Folder,
+  Gauge,
   Home,
   Package,
   Settings,
@@ -44,13 +47,33 @@ import Link from "next/link";
 
 import JesaLogo from "/public/assets/images/JESA_logo_tr.png"; // adjust path accordingly
 import { NavUser } from "./nav-user";
+import { NavSecondary } from "./nav-secondary";
+import { NavMain } from "./nav-main";
 
 const data = {
   navMain: [
     {
       title: "Dashboard",
       url: "/",
-      icon: Home,
+      icon: Gauge,
+      isActive: true, // You can remove this since we calculate dynamically now
+    },
+    {
+      title: "Projects",
+      url: "/",
+      icon: Folder,
+      isActive: true, // You can remove this since we calculate dynamically now
+    },
+    {
+      title: "Punches",
+      url: "/",
+      icon: Bug,
+      isActive: true, // You can remove this since we calculate dynamically now
+    },
+    {
+      title: "Agents",
+      url: "/",
+      icon: Users,
       isActive: true, // You can remove this since we calculate dynamically now
     },
   ],
@@ -127,8 +150,8 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton className="h-full" asChild>
-              <div className="flex flex-col justify-left items-start gap-2">
-                <Image src={JesaLogo} alt="Jesa Logo" width={100} height={32} />
+              <div className="flex flex-col justify-center items-center gap-2 border-b py-6">
+                <Image src={JesaLogo} alt="Jesa Logo" width={120} height={32} />
                 {/* <span className="truncate text-xs">Punch Dashboard</span> */}
               </div>
             </SidebarMenuButton>
@@ -137,6 +160,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
+        <NavMain items={[]} />
         {/* Nav Main */}
         <SidebarGroup>
           <SidebarGroupContent>
@@ -155,8 +179,8 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Analytics */}
-        <SidebarGroup>
+        {/* Punches */}
+        {/* <SidebarGroup>
           <SidebarGroupLabel>Punches</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -172,10 +196,10 @@ export function AppSidebar() {
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
-        </SidebarGroup>
+        </SidebarGroup> */}
 
         {/* Support */}
-        <SidebarGroup>
+        {/* <SidebarGroup>
           <SidebarGroupLabel>Agents</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -196,7 +220,7 @@ export function AppSidebar() {
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
-        </SidebarGroup>
+        </SidebarGroup> */}
 
         {/* Shop */}
         {/* <SidebarGroup>
