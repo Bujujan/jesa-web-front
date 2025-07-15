@@ -144,7 +144,7 @@ export default function PunchTable() {
       <DataTable
         title="Punches"
         description="Recent punches recorded"
-        seeAllLink="/punches"
+        seeAllLink="/admin/dashboard/punches"
         seeAllText="See All Punches"
         columns={columns}
         data={data}

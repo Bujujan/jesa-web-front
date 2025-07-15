@@ -59,7 +59,7 @@ export default function UserTable() {
       <DataTable
         title="Agents"
         description="Agents registered to the app"
-        seeAllLink="/agents"
+        seeAllLink="/admin/dashboard/agents"
         seeAllText="See All Agents"
         columns={columns}
         data={data}
