@@ -1,12 +1,8 @@
-import { AppSidebar } from "@/components/app-sidebar";
 import InfoCards from "@/components/info-cards";
-import { NavSecondary } from "@/components/nav-secondary";
+import ProjectTable from "@/components/projectTable";
 import PunchTable from "@/components/punchTable";
-import { SectionCards } from "@/components/section-cards";
-import { SiteHeader } from "@/components/site-header";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import UserTable from "@/components/userTable";
-import { useEffect, useState } from "react";
 
 export default function Home() {
   return (
@@ -20,6 +16,7 @@ export default function Home() {
         </div>
         <InfoCards />
         <PunchTable />
+        <ProjectTable />
         <UserTable />
       </div>
     </SidebarProvider>
