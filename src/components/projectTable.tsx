@@ -15,25 +15,21 @@ type Project = {
 
 const projectColumns: ColumnDef<Project>[] = [
   {
-    accessorKey: "id",
-    header: "ID",
-  },
-  {
     accessorKey: "name",
-    header: "Name",
+    header: "Group Name",
   },
   {
     accessorKey: "description",
     header: "Description",
   },
-  {
-    accessorKey: "createdAt",
-    header: "Created at",
-    cell: ({ getValue }) => {
-      const date = new Date(getValue() as string);
-      return isNaN(date.getTime()) ? "Invalid date" : date.toLocaleDateString();
-    },
-  },
+  // {
+  //   accessorKey: "createdAt",
+  //   header: "Created at",
+  //   cell: ({ getValue }) => {
+  //     const date = new Date(getValue() as string);
+  //     return isNaN(date.getTime()) ? "Invalid date" : date.toLocaleDateString();
+  //   },
+  // },
 ];
 
 export default function ProjectTable() {
@@ -43,7 +39,9 @@ export default function ProjectTable() {
   React.useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/projects"); // change to your real API endpoint
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/projects`
+        ); // change to your real API endpoint
         const projects = await res.json();
         setData(projects);
         console.log("Projects API response:", projects);

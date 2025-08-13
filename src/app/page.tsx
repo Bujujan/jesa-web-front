@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation";
 import React from "react";
 
-const page = () => {
-  redirect("/admin/dashboard");
-};
-
-export default page;
+export default function Page() {
+  return null; // middleware will redirect based on auth
+}

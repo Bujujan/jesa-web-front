@@ -24,17 +24,23 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { SignOutButton, useUser } from "@clerk/nextjs";
 
-export function NavUser({
-  user,
-}: {
-  user: {
-    name: string;
-    email: string;
-    avatar: string;
-  };
-}) {
+export function NavUser() {
+  const { user, isLoaded, isSignedIn } = useUser();
   const { isMobile } = useSidebar();
+
+  if (!isLoaded || !isSignedIn || !user) {
+    return null;
+  }
+
+  const userData = {
+    name: user.fullName || user.firstName || "Unknown User",
+    email: user.emailAddresses[0]?.emailAddress || "No email",
+    avatar: "",
+  };
+
+  const firstLetter = userData.name.charAt(0).toUpperCase() || "U";
 
   return (
     <SidebarMenu>
@@ -46,13 +52,18 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                {userData.avatar ? (
+                  <AvatarImage src={userData.avatar} alt={userData.name} />
+                ) : (
+                  <AvatarFallback className="rounded-lg">
+                    {firstLetter}
+                  </AvatarFallback>
+                )}
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
+                <span className="truncate font-medium">{userData.name}</span>
                 <span className="text-muted-foreground truncate text-xs">
-                  {user.email}
+                  {userData.email}
                 </span>
               </div>
               <IconDotsVertical className="ml-auto size-4" />
@@ -67,13 +78,18 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  {userData.avatar ? (
+                    <AvatarImage src={userData.avatar} alt={userData.name} />
+                  ) : (
+                    <AvatarFallback className="rounded-lg">
+                      {firstLetter}
+                    </AvatarFallback>
+                  )}
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
+                  <span className="truncate font-medium">{userData.name}</span>
                   <span className="text-muted-foreground truncate text-xs">
-                    {user.email}
+                    {userData.email}
                   </span>
                 </div>
               </div>
@@ -96,7 +112,7 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <IconLogout />
-              Log out
+              <SignOutButton />
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

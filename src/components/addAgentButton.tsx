@@ -16,21 +16,24 @@ export default function AddAgentButton() {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    surname: "",
     email: "",
+    role: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:8080/api/users", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/users`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to add agent");
@@ -40,7 +43,7 @@ export default function AddAgentButton() {
       console.log("✅ Agent added:", result);
 
       // Optionally reset the form
-      setFormData({ name: "", surname: "", email: "" });
+      setFormData({ name: "", email: "", role: "" });
 
       // Close the modal
       setOpen(false);
@@ -82,19 +85,6 @@ export default function AddAgentButton() {
           </div>
 
           <div className="space-y-1">
-            <label className="block text-sm font-medium">Surname</label>
-            <input
-              type="text"
-              value={formData.surname}
-              onChange={(e) =>
-                setFormData({ ...formData, surname: e.target.value })
-              }
-              className="w-full border px-3 py-2 rounded-md text-sm"
-              required
-            />
-          </div>
-
-          <div className="space-y-1">
             <label className="block text-sm font-medium">Email</label>
             <input
               type="email"
@@ -106,6 +96,24 @@ export default function AddAgentButton() {
               className="w-full border px-3 py-2 rounded-md text-sm"
               required
             />
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-sm font-medium">Role</label>
+            <select
+              value={formData.role}
+              onChange={(e) =>
+                setFormData({ ...formData, role: e.target.value })
+              }
+              className="w-full border px-3 py-2 rounded-md text-sm"
+              required
+            >
+              <option value="" disabled>
+                Select role
+              </option>
+              <option value="commissioning">Commissioning</option>
+              <option value="completion">Completion</option>
+            </select>
           </div>
 
           <DialogFooter className="mt-4">

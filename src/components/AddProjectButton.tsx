@@ -17,20 +17,23 @@ export default function AddProjectButton() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    code: "", // Added code field
+    sector: "", // Added code field
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:8080/api/projects", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/projects`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to add project");
@@ -40,7 +43,7 @@ export default function AddProjectButton() {
       console.log("✅ Project added:", result);
 
       // Reset form and close dialog
-      setFormData({ name: "", description: "", code: "" });
+      setFormData({ name: "", description: "", sector: "" });
       setOpen(false);
     } catch (error) {
       console.error("❌ Error adding project:", error);
@@ -92,12 +95,12 @@ export default function AddProjectButton() {
           </div>
 
           <div className="space-y-1">
-            <label className="block text-sm font-medium">Code</label>
+            <label className="block text-sm font-medium">Sector</label>
             <input
               type="text"
-              value={formData.code}
+              value={formData.sector}
               onChange={(e) =>
-                setFormData({ ...formData, code: e.target.value })
+                setFormData({ ...formData, sector: e.target.value })
               }
               className="w-full border px-3 py-2 rounded-md text-sm"
               required

@@ -76,6 +76,12 @@ const data = {
       icon: Users,
       isActive: true, // You can remove this since we calculate dynamically now
     },
+    {
+      title: "Systems",
+      url: "/admin/dashboard/systems",
+      icon: Users,
+      isActive: true, // You can remove this since we calculate dynamically now
+    },
   ],
   punch: [
     {
@@ -279,13 +285,7 @@ export function AppSidebar() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <NavUser
-            user={{
-              name: "John Doe",
-              email: "0J5fW@example.com",
-              avatar: "https://github.com/shadcn.png",
-            }}
-          />
+          <NavUser />
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>

@@ -4,25 +4,33 @@ import * as React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "./DataTable";
 import { Skeleton } from "./ui/skeleton";
+import { useAuth } from "@clerk/nextjs";
 
 type Punch = {
-  id: number;
+  uuid: string;
   title: string;
   description?: string | null;
-  status: string; // e.g. "OPEN", "IN_PROGRESS", "RESOLVED"
-  projectId?: string | null;
-  createdByName?: string | null;
-  modifiedByName?: string | null;
-  createdAt?: string | null; // ISO date string
-  updatedAt?: string | null;
+  status: string;
+  category?: string;
+  image_url?: string | null;
+  project?: {
+    uuid: string;
+    name: string;
+    // ... other fields if needed
+  } | null;
+  created_by?: {
+    name: string;
+  } | null;
+  modified_by?: {
+    name: string;
+  } | null;
+  created_at?: string | null; // ISO date string
+  updated_at?: string | null;
 };
-
-const STATUSES = ["OPEN", "IN_PROGRESS", "RESOLVED"];
 
 const displayValue = (value: any) =>
   value === null || value === undefined || value === "" ? "NULL" : value;
 
-// StatusBadge component for colored badges
 const StatusBadge = ({ status }: { status: string }) => {
   const statusMap: Record<string, { label: string; color: string }> = {
     OPEN: { label: "Open", color: "bg-red-200 text-red-800" },
@@ -51,12 +59,31 @@ export default function PunchTable() {
   const [data, setData] = React.useState<Punch[]>([]);
   const [loading, setLoading] = React.useState(true);
 
+  // Get Clerk auth helpers
+  const { getToken } = useAuth();
+
   React.useEffect(() => {
     const fetchPunches = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/punches/dto");
+        // Get Clerk JWT token
+        const token = await getToken();
+
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/punches`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error(`Failed to fetch punches: ${res.status}`);
+        }
+
         const punches = await res.json();
         setData(punches);
+        console.log("Fetched punches:", punches); // Debug log
       } catch (error) {
         console.error("Failed to fetch punches:", error);
       } finally {
@@ -65,28 +92,7 @@ export default function PunchTable() {
     };
 
     fetchPunches();
-  }, []);
-
-  // Note: updateStatus function kept for completeness if needed in future
-  const updateStatus = async (id: number, newStatus: string) => {
-    try {
-      const res = await fetch(`http://localhost:8080/api/punches/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!res.ok) throw new Error("Failed to update status");
-
-      setData((oldData) =>
-        oldData.map((punch) =>
-          punch.id === id ? { ...punch, status: newStatus } : punch
-        )
-      );
-    } catch (error) {
-      console.error("Error updating status:", error);
-    }
-  };
+  }, [getToken]);
 
   const columns: ColumnDef<Punch>[] = [
     {
@@ -100,35 +106,44 @@ export default function PunchTable() {
       cell: (info) => displayValue(info.getValue()),
     },
     {
-      accessorKey: "projectId",
+      id: "projectUuid",
       header: "Project ID",
-      cell: (info) => displayValue(info.getValue()),
+      accessorFn: (row) => row.project?.uuid ?? "-",
+      cell: (info) => info.getValue(),
     },
     {
-      accessorKey: "createdByName",
+      id: "createdByName",
       header: "Created By",
-      cell: (info) => displayValue(info.getValue()),
+      accessorFn: (row) => row.created_by?.name ?? "-",
+      cell: (info) => info.getValue(),
     },
     {
-      accessorKey: "modifiedByName",
+      id: "modifiedByName",
       header: "Modified By",
-      cell: (info) => displayValue(info.getValue()),
+      accessorFn: (row) => row.modified_by?.name ?? "-",
+      cell: (info) => info.getValue(),
     },
     {
-      accessorKey: "createdAt",
+      id: "createdAt",
       header: "Created At",
-      cell: (info) =>
-        info.getValue()
-          ? new Date(info.getValue() as string).toLocaleString()
-          : "NULL",
+      accessorFn: (row) => row.created_at ?? null,
+      cell: (info) => {
+        const dateStr = info.getValue() as string | null;
+        if (!dateStr) return "-";
+        const date = new Date(dateStr);
+        return isNaN(date.getTime()) ? "-" : date.toLocaleString();
+      },
     },
     {
-      accessorKey: "updatedAt",
+      id: "updatedAt",
       header: "Updated At",
-      cell: (info) =>
-        info.getValue()
-          ? new Date(info.getValue() as string).toLocaleString()
-          : "NULL",
+      accessorFn: (row) => row.updated_at ?? null,
+      cell: (info) => {
+        const dateStr = info.getValue() as string | null;
+        if (!dateStr) return "-";
+        const date = new Date(dateStr);
+        return isNaN(date.getTime()) ? "-" : date.toLocaleString();
+      },
     },
     {
       accessorKey: "status",
