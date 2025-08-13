@@ -5,7 +5,26 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "./DataTable";
 import { Skeleton } from "./ui/skeleton";
 import { useAuth } from "@clerk/nextjs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "./ui/dialog";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { Pencil, Trash2 } from "lucide-react";
 
+type Project = { uuid: string; name: string };
 type Punch = {
   uuid: string;
   title: string;
@@ -13,18 +32,10 @@ type Punch = {
   status: string;
   category?: string;
   image_url?: string | null;
-  project?: {
-    uuid: string;
-    name: string;
-    // ... other fields if needed
-  } | null;
-  created_by?: {
-    name: string;
-  } | null;
-  modified_by?: {
-    name: string;
-  } | null;
-  created_at?: string | null; // ISO date string
+  project?: Project | null;
+  created_by?: { name: string } | null;
+  modified_by?: { name: string } | null;
+  created_at?: string | null;
   updated_at?: string | null;
 };
 
@@ -40,12 +51,10 @@ const StatusBadge = ({ status }: { status: string }) => {
     },
     RESOLVED: { label: "Resolved", color: "bg-green-200 text-green-800" },
   };
-
   const statusInfo = statusMap[status] || {
     label: status,
     color: "bg-gray-100 text-gray-700",
   };
-
   return (
     <span
       className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${statusInfo.color}`}
@@ -56,43 +65,87 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 export default function PunchTable() {
-  const [data, setData] = React.useState<Punch[]>([]);
+  const [punches, setPunches] = React.useState<Punch[]>([]);
+  const [projects, setProjects] = React.useState<Project[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [selectedProjectUuid, setSelectedProjectUuid] = React.useState("");
+  const [editPunch, setEditPunch] = React.useState<Punch | null>(null);
 
-  // Get Clerk auth helpers
   const { getToken } = useAuth();
 
   React.useEffect(() => {
-    const fetchPunches = async () => {
+    const fetchData = async () => {
       try {
-        // Get Clerk JWT token
         const token = await getToken();
+        const [projectsRes, punchesRes] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/punches`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
 
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/punches`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        if (!projectsRes.ok || !punchesRes.ok)
+          throw new Error("Failed to fetch data");
 
-        if (!res.ok) {
-          throw new Error(`Failed to fetch punches: ${res.status}`);
-        }
-
-        const punches = await res.json();
-        setData(punches);
-        console.log("Fetched punches:", punches); // Debug log
-      } catch (error) {
-        console.error("Failed to fetch punches:", error);
+        setProjects(await projectsRes.json());
+        setPunches(await punchesRes.json());
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchPunches();
+    fetchData();
   }, [getToken]);
+
+  const filteredPunches = selectedProjectUuid
+    ? punches.filter((p) => p.project?.uuid === selectedProjectUuid)
+    : punches;
+
+  const handleEditPunch = async (updatedPunch: Punch) => {
+    try {
+      const token = await getToken();
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/punches/${updatedPunch.uuid}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(updatedPunch),
+        }
+      );
+      if (!res.ok) throw new Error("Failed to update punch");
+
+      setPunches((prev) =>
+        prev.map((p) => (p.uuid === updatedPunch.uuid ? updatedPunch : p))
+      );
+      setEditPunch(null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeletePunch = async (uuid: string) => {
+    if (!confirm("Are you sure you want to delete this punch?")) return;
+    try {
+      const token = await getToken();
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/punches/${uuid}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (!res.ok) throw new Error("Failed to delete punch");
+      setPunches((prev) => prev.filter((p) => p.uuid !== uuid));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const columns: ColumnDef<Punch>[] = [
     {
@@ -106,64 +159,216 @@ export default function PunchTable() {
       cell: (info) => displayValue(info.getValue()),
     },
     {
-      id: "projectUuid",
-      header: "Project ID",
-      accessorFn: (row) => row.project?.uuid ?? "-",
-      cell: (info) => info.getValue(),
+      id: "projectName",
+      header: "Project",
+      accessorFn: (row) => row.project?.name ?? "-",
     },
     {
       id: "createdByName",
       header: "Created By",
       accessorFn: (row) => row.created_by?.name ?? "-",
-      cell: (info) => info.getValue(),
     },
     {
       id: "modifiedByName",
       header: "Modified By",
       accessorFn: (row) => row.modified_by?.name ?? "-",
-      cell: (info) => info.getValue(),
     },
     {
       id: "createdAt",
       header: "Created At",
       accessorFn: (row) => row.created_at ?? null,
-      cell: (info) => {
-        const dateStr = info.getValue() as string | null;
-        if (!dateStr) return "-";
-        const date = new Date(dateStr);
-        return isNaN(date.getTime()) ? "-" : date.toLocaleString();
-      },
+      cell: (info) =>
+        info.getValue()
+          ? new Date(info.getValue() as string).toLocaleString()
+          : "-",
     },
     {
       id: "updatedAt",
       header: "Updated At",
       accessorFn: (row) => row.updated_at ?? null,
-      cell: (info) => {
-        const dateStr = info.getValue() as string | null;
-        if (!dateStr) return "-";
-        const date = new Date(dateStr);
-        return isNaN(date.getTime()) ? "-" : date.toLocaleString();
-      },
+      cell: (info) =>
+        info.getValue()
+          ? new Date(info.getValue() as string).toLocaleString()
+          : "-",
     },
     {
       accessorKey: "status",
       header: "Status",
       cell: ({ getValue }) => <StatusBadge status={getValue() as string} />,
     },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => (
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setEditPunch(row.original)}
+            className="cursor-pointer"
+          >
+            <Pencil className="h-4 w-4 mr-1" /> Edit
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => handleDeletePunch(row.original.uuid)}
+            className="cursor-pointer"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    },
   ];
 
   if (loading) return <Skeleton className="w-full px-6 py-2 h-48 mb-6" />;
 
   return (
-    <div className="w-full px-6 py-2">
+    <div className="w-full px-6 py-2 space-y-4">
+      <div>
+        <label
+          htmlFor="projectFilter"
+          className="block text-sm font-medium mb-1"
+        >
+          Filter by Project
+        </label>
+        <select
+          id="projectFilter"
+          value={selectedProjectUuid}
+          onChange={(e) => setSelectedProjectUuid(e.target.value)}
+          className="w-full border px-3 py-2 rounded-md text-sm"
+        >
+          <option value="">All Projects</option>
+          {projects.map((project) => (
+            <option key={project.uuid} value={project.uuid}>
+              {project.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <DataTable
         title="Punches"
         description="Recent punches recorded"
         seeAllLink="/admin/dashboard/punches"
         seeAllText="See All Punches"
         columns={columns}
-        data={data}
+        data={filteredPunches}
       />
+
+      {/* Edit Punch Modal */}
+      {editPunch && (
+        <Dialog open={!!editPunch} onOpenChange={() => setEditPunch(null)}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Edit Punch</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {/* Title */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Title</label>
+                <Input
+                  placeholder="Title"
+                  value={editPunch.title}
+                  onChange={(e) =>
+                    setEditPunch({ ...editPunch, title: e.target.value })
+                  }
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Description
+                </label>
+                <Input
+                  placeholder="Description"
+                  value={editPunch.description || ""}
+                  onChange={(e) =>
+                    setEditPunch({ ...editPunch, description: e.target.value })
+                  }
+                />
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Category
+                </label>
+                <Select
+                  value={editPunch.category || ""}
+                  onValueChange={(val) =>
+                    setEditPunch({ ...editPunch, category: val })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="A">A</SelectItem>
+                    <SelectItem value="B">B</SelectItem>
+                    <SelectItem value="C">C</SelectItem>
+                    <SelectItem value="D">D</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Status</label>
+                <Select
+                  value={editPunch.status}
+                  onValueChange={(val) =>
+                    setEditPunch({ ...editPunch, status: val })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="OPEN">Open</SelectItem>
+                    <SelectItem value="CLOSED">Closed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Project */}
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Project
+                </label>
+                <Select
+                  value={editPunch.project?.uuid || ""}
+                  onValueChange={(val) =>
+                    setEditPunch({
+                      ...editPunch,
+                      project: projects.find((p) => p.uuid === val) || null,
+                    })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Project" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map((p) => (
+                      <SelectItem key={p.uuid} value={p.uuid}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button onClick={() => editPunch && handleEditPunch(editPunch)}>
+                Save
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

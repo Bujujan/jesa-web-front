@@ -14,7 +14,6 @@ const Projet = () => {
         <h1 className="text-2xl font-bold pb-4">Projects</h1>
         <div className="flex gap-2">
           <AddProjectButton />
-          <AssignProjectToUserButton />
         </div>
         {/* <Button>
           <CirclePlus className="mr-2 h-4 w-4" />

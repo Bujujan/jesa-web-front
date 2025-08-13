@@ -29,8 +29,8 @@ export default function AssignProjectToUserButton() {
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [formData, setFormData] = useState({
-    userUuid: "",
-    projectUuid: "",
+    user_id: "",
+    project_id: "",
   });
 
   // Fetch users and projects when modal opens
@@ -70,16 +70,16 @@ export default function AssignProjectToUserButton() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/projectusers`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/projectuser`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
+          // Match DTO field names
           body: JSON.stringify({
-            userUuid: formData.userUuid,
-            projectUuid: formData.projectUuid,
-            assigned_at: new Date().toISOString(),
+            user_id: formData.user_id,
+            project_id: formData.project_id,
           }),
         }
       );
@@ -91,7 +91,7 @@ export default function AssignProjectToUserButton() {
       const result = await response.json();
       console.log("✅ Assigned project to user:", result);
 
-      setFormData({ userUuid: "", projectUuid: "" });
+      setFormData({ user_id: "", project_id: "" });
       setOpen(false);
     } catch (error) {
       console.error("❌ Error assigning project:", error);
@@ -119,9 +119,9 @@ export default function AssignProjectToUserButton() {
           <div className="space-y-1">
             <label className="block text-sm font-medium">User</label>
             <select
-              value={formData.userUuid}
+              value={formData.user_id}
               onChange={(e) =>
-                setFormData({ ...formData, userUuid: e.target.value })
+                setFormData({ ...formData, user_id: e.target.value })
               }
               className="w-full border px-3 py-2 rounded-md text-sm"
               required
@@ -140,9 +140,9 @@ export default function AssignProjectToUserButton() {
           <div className="space-y-1">
             <label className="block text-sm font-medium">Project</label>
             <select
-              value={formData.projectUuid}
+              value={formData.project_id}
               onChange={(e) =>
-                setFormData({ ...formData, projectUuid: e.target.value })
+                setFormData({ ...formData, project_id: e.target.value })
               }
               className="w-full border px-3 py-2 rounded-md text-sm"
               required

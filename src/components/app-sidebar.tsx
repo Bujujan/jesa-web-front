@@ -3,6 +3,7 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import {
+  Anvil,
   BarChart3,
   Bug,
   Building2,
@@ -11,6 +12,7 @@ import {
   CreditCard,
   FileText,
   Folder,
+  FolderRoot,
   Gauge,
   Home,
   Package,
@@ -79,7 +81,13 @@ const data = {
     {
       title: "Systems",
       url: "/admin/dashboard/systems",
-      icon: Users,
+      icon: Anvil,
+      isActive: true, // You can remove this since we calculate dynamically now
+    },
+    {
+      title: "Assigned Projects",
+      url: "/admin/dashboard/projectassign",
+      icon: FolderRoot,
       isActive: true, // You can remove this since we calculate dynamically now
     },
   ],
