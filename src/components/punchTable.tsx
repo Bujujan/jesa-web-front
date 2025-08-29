@@ -62,6 +62,36 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
+// Helper function for date range filtering
+const isDateInRange = (dateStr: string, range: string) => {
+  const date = new Date(dateStr);
+  const now = new Date();
+
+  switch (range) {
+    case "today":
+      return (
+        date.getFullYear() === now.getFullYear() &&
+        date.getMonth() === now.getMonth() &&
+        date.getDate() === now.getDate()
+      );
+    case "week": {
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday
+      startOfWeek.setHours(0, 0, 0, 0);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 7);
+      return date >= startOfWeek && date < endOfWeek;
+    }
+    case "month":
+      return (
+        date.getFullYear() === now.getFullYear() &&
+        date.getMonth() === now.getMonth()
+      );
+    default:
+      return true;
+  }
+};
+
 export default function PunchTable() {
   const [punches, setPunches] = React.useState<Punch[]>([]);
   const [projects, setProjects] = React.useState<Project[]>([]);
@@ -72,6 +102,7 @@ export default function PunchTable() {
   const [selectedSystemUuid, setSelectedSystemUuid] = React.useState("");
   const [selectedStatus, setSelectedStatus] = React.useState("");
   const [titleFilter, setTitleFilter] = React.useState("");
+  const [dateFilter, setDateFilter] = React.useState(""); // today, week, month
   const [editPunch, setEditPunch] = React.useState<Punch | null>(null);
 
   const { getToken } = useAuth();
@@ -132,6 +163,11 @@ export default function PunchTable() {
     .filter((p) =>
       titleFilter
         ? p.title.toLowerCase().includes(titleFilter.toLowerCase())
+        : true
+    )
+    .filter((p) =>
+      dateFilter && p.created_at
+        ? isDateInRange(p.created_at, dateFilter)
         : true
     );
 
@@ -344,6 +380,27 @@ export default function PunchTable() {
             onChange={(e) => setTitleFilter(e.target.value)}
             className="w-full border px-3 py-2 rounded-md text-sm"
           />
+        </div>
+
+        {/* Created At Filter */}
+        <div className="flex-1 min-w-[200px]">
+          <label
+            htmlFor="dateFilter"
+            className="block text-sm font-medium mb-1"
+          >
+            Filter by Created At
+          </label>
+          <select
+            id="dateFilter"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="w-full border px-3 py-2 rounded-md text-sm"
+          >
+            <option value="">All Dates</option>
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+          </select>
         </div>
       </div>
 
