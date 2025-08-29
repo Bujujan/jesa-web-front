@@ -17,13 +17,38 @@ export default function AddProjectButton() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    sector: "", // Added code field
+    sector: "",
   });
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
 
     try {
+      // Fetch existing projects
+      const existingResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/projects`
+      );
+
+      if (!existingResponse.ok) {
+        throw new Error("Failed to fetch existing projects");
+      }
+
+      const existingProjects = await existingResponse.json();
+
+      // Check for duplicate name (case-insensitive)
+      const nameExists = existingProjects.some(
+        (project: { name: string }) =>
+          project.name.toLowerCase() === formData.name.toLowerCase()
+      );
+
+      if (nameExists) {
+        setError("❌ A project with this name already exists.");
+        return;
+      }
+
+      // Submit the new project
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/projects`,
         {
@@ -45,8 +70,9 @@ export default function AddProjectButton() {
       // Reset form and close dialog
       setFormData({ name: "", description: "", sector: "" });
       setOpen(false);
-    } catch (error) {
-      console.error("❌ Error adding project:", error);
+    } catch (err) {
+      console.error("❌ Error adding project:", err);
+      setError("❌ Something went wrong while adding the project.");
     }
   };
 
@@ -79,6 +105,7 @@ export default function AddProjectButton() {
               className="w-full border px-3 py-2 rounded-md text-sm"
               required
             />
+            {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
           </div>
 
           <div className="space-y-1">

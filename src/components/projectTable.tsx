@@ -108,6 +108,10 @@ export default function ProjectTable() {
       header: "Description",
     },
     {
+      accessorKey: "sector",
+      header: "Sector",
+    },
+    {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => (
