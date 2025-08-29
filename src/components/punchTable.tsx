@@ -11,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogTrigger,
 } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -25,6 +24,8 @@ import {
 import { Pencil, Trash2 } from "lucide-react";
 
 type Project = { uuid: string; name: string };
+type System = { uuid: string; system_number: string };
+
 type Punch = {
   uuid: string;
   title: string;
@@ -33,6 +34,7 @@ type Punch = {
   category?: string;
   image_url?: string | null;
   project?: Project | null;
+  system?: System | null;
   created_by?: { name: string } | null;
   modified_by?: { name: string } | null;
   created_at?: string | null;
@@ -45,11 +47,7 @@ const displayValue = (value: any) =>
 const StatusBadge = ({ status }: { status: string }) => {
   const statusMap: Record<string, { label: string; color: string }> = {
     OPEN: { label: "Open", color: "bg-red-200 text-red-800" },
-    IN_PROGRESS: {
-      label: "In Progress",
-      color: "bg-yellow-200 text-yellow-800",
-    },
-    RESOLVED: { label: "Resolved", color: "bg-green-200 text-green-800" },
+    CLOSED: { label: "Closed", color: "bg-gray-200 text-gray-800" },
   };
   const statusInfo = statusMap[status] || {
     label: status,
@@ -67,8 +65,12 @@ const StatusBadge = ({ status }: { status: string }) => {
 export default function PunchTable() {
   const [punches, setPunches] = React.useState<Punch[]>([]);
   const [projects, setProjects] = React.useState<Project[]>([]);
+  const [systems, setSystems] = React.useState<System[]>([]);
   const [loading, setLoading] = React.useState(true);
+
   const [selectedProjectUuid, setSelectedProjectUuid] = React.useState("");
+  const [selectedSystemUuid, setSelectedSystemUuid] = React.useState("");
+  const [selectedStatus, setSelectedStatus] = React.useState("");
   const [editPunch, setEditPunch] = React.useState<Punch | null>(null);
 
   const { getToken } = useAuth();
@@ -100,9 +102,32 @@ export default function PunchTable() {
     fetchData();
   }, [getToken]);
 
-  const filteredPunches = selectedProjectUuid
-    ? punches.filter((p) => p.project?.uuid === selectedProjectUuid)
-    : punches;
+  // Update systems when project changes
+  React.useEffect(() => {
+    if (!selectedProjectUuid) {
+      setSystems([]);
+      setSelectedSystemUuid("");
+      return;
+    }
+    const systemsForProject = punches
+      .filter((p) => p.project?.uuid === selectedProjectUuid && p.system)
+      .map((p) => p.system!) // non-null
+      .reduce<System[]>((acc, system) => {
+        if (!acc.some((s) => s.uuid === system.uuid)) acc.push(system);
+        return acc;
+      }, []);
+    setSystems(systemsForProject);
+    setSelectedSystemUuid("");
+  }, [selectedProjectUuid, punches]);
+
+  const filteredPunches = punches
+    .filter((p) =>
+      selectedProjectUuid ? p.project?.uuid === selectedProjectUuid : true
+    )
+    .filter((p) =>
+      selectedSystemUuid ? p.system?.uuid === selectedSystemUuid : true
+    )
+    .filter((p) => (selectedStatus ? p.status === selectedStatus : true));
 
   const handleEditPunch = async (updatedPunch: Punch) => {
     try {
@@ -164,6 +189,11 @@ export default function PunchTable() {
       accessorFn: (row) => row.project?.name ?? "-",
     },
     {
+      id: "systemName",
+      header: "System",
+      accessorFn: (row) => row.system?.system_number ?? "-",
+    },
+    {
       id: "createdByName",
       header: "Created By",
       accessorFn: (row) => row.created_by?.name ?? "-",
@@ -205,7 +235,6 @@ export default function PunchTable() {
             variant="secondary"
             size="sm"
             onClick={() => setEditPunch(row.original)}
-            className="cursor-pointer"
           >
             <Pencil className="h-4 w-4 mr-1" /> Edit
           </Button>
@@ -213,7 +242,6 @@ export default function PunchTable() {
             variant="destructive"
             size="sm"
             onClick={() => handleDeletePunch(row.original.uuid)}
-            className="cursor-pointer"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -226,26 +254,73 @@ export default function PunchTable() {
 
   return (
     <div className="w-full px-6 py-2 space-y-4">
-      <div>
-        <label
-          htmlFor="projectFilter"
-          className="block text-sm font-medium mb-1"
-        >
-          Filter by Project
-        </label>
-        <select
-          id="projectFilter"
-          value={selectedProjectUuid}
-          onChange={(e) => setSelectedProjectUuid(e.target.value)}
-          className="w-full border px-3 py-2 rounded-md text-sm"
-        >
-          <option value="">All Projects</option>
-          {projects.map((project) => (
-            <option key={project.uuid} value={project.uuid}>
-              {project.name}
-            </option>
-          ))}
-        </select>
+      <div className="flex gap-4 mb-4">
+        {/* Project Filter */}
+        <div className="flex-1">
+          <label
+            htmlFor="projectFilter"
+            className="block text-sm font-medium mb-1"
+          >
+            Filter by Project
+          </label>
+          <select
+            id="projectFilter"
+            value={selectedProjectUuid}
+            onChange={(e) => setSelectedProjectUuid(e.target.value)}
+            className="w-full border px-3 py-2 rounded-md text-sm"
+          >
+            <option value="">All Projects</option>
+            {projects.map((project) => (
+              <option key={project.uuid} value={project.uuid}>
+                {project.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* System Filter */}
+        <div className="flex-1">
+          <label
+            htmlFor="systemFilter"
+            className="block text-sm font-medium mb-1"
+          >
+            Filter by System
+          </label>
+          <select
+            id="systemFilter"
+            value={selectedSystemUuid}
+            onChange={(e) => setSelectedSystemUuid(e.target.value)}
+            className="w-full border px-3 py-2 rounded-md text-sm"
+            disabled={!selectedProjectUuid || systems.length === 0}
+          >
+            <option value="">All Systems</option>
+            {systems.map((system) => (
+              <option key={system.uuid} value={system.uuid}>
+                {system.system_number}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Status Filter */}
+        <div className="flex-1">
+          <label
+            htmlFor="statusFilter"
+            className="block text-sm font-medium mb-1"
+          >
+            Filter by Status
+          </label>
+          <select
+            id="statusFilter"
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="w-full border px-3 py-2 rounded-md text-sm"
+          >
+            <option value="">All Statuses</option>
+            <option value="OPEN">Open</option>
+            <option value="CLOSED">Closed</option>
+          </select>
+        </div>
       </div>
 
       <DataTable
@@ -265,33 +340,26 @@ export default function PunchTable() {
               <DialogTitle>Edit Punch</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              {/* Title */}
               <div>
                 <label className="block text-sm font-medium mb-1">Title</label>
                 <Input
-                  placeholder="Title"
                   value={editPunch.title}
                   onChange={(e) =>
                     setEditPunch({ ...editPunch, title: e.target.value })
                   }
                 />
               </div>
-
-              {/* Description */}
               <div>
                 <label className="block text-sm font-medium mb-1">
                   Description
                 </label>
                 <Input
-                  placeholder="Description"
                   value={editPunch.description || ""}
                   onChange={(e) =>
                     setEditPunch({ ...editPunch, description: e.target.value })
                   }
                 />
               </div>
-
-              {/* Category */}
               <div>
                 <label className="block text-sm font-medium mb-1">
                   Category
@@ -313,8 +381,6 @@ export default function PunchTable() {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Status */}
               <div>
                 <label className="block text-sm font-medium mb-1">Status</label>
                 <Select
@@ -328,12 +394,12 @@ export default function PunchTable() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="OPEN">Open</SelectItem>
+                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                    <SelectItem value="RESOLVED">Resolved</SelectItem>
                     <SelectItem value="CLOSED">Closed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Project */}
               <div>
                 <label className="block text-sm font-medium mb-1">
                   Project
@@ -360,7 +426,6 @@ export default function PunchTable() {
                 </Select>
               </div>
             </div>
-
             <DialogFooter>
               <Button onClick={() => editPunch && handleEditPunch(editPunch)}>
                 Save
