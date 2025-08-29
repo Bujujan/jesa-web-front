@@ -71,6 +71,7 @@ export default function PunchTable() {
   const [selectedProjectUuid, setSelectedProjectUuid] = React.useState("");
   const [selectedSystemUuid, setSelectedSystemUuid] = React.useState("");
   const [selectedStatus, setSelectedStatus] = React.useState("");
+  const [titleFilter, setTitleFilter] = React.useState("");
   const [editPunch, setEditPunch] = React.useState<Punch | null>(null);
 
   const { getToken } = useAuth();
@@ -127,7 +128,12 @@ export default function PunchTable() {
     .filter((p) =>
       selectedSystemUuid ? p.system?.uuid === selectedSystemUuid : true
     )
-    .filter((p) => (selectedStatus ? p.status === selectedStatus : true));
+    .filter((p) => (selectedStatus ? p.status === selectedStatus : true))
+    .filter((p) =>
+      titleFilter
+        ? p.title.toLowerCase().includes(titleFilter.toLowerCase())
+        : true
+    );
 
   const handleEditPunch = async (updatedPunch: Punch) => {
     try {
@@ -254,9 +260,9 @@ export default function PunchTable() {
 
   return (
     <div className="w-full px-6 py-2 space-y-4">
-      <div className="flex gap-4 mb-4">
+      <div className="flex flex-wrap gap-4 mb-4">
         {/* Project Filter */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-[200px]">
           <label
             htmlFor="projectFilter"
             className="block text-sm font-medium mb-1"
@@ -279,7 +285,7 @@ export default function PunchTable() {
         </div>
 
         {/* System Filter */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-[200px]">
           <label
             htmlFor="systemFilter"
             className="block text-sm font-medium mb-1"
@@ -303,7 +309,7 @@ export default function PunchTable() {
         </div>
 
         {/* Status Filter */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-[200px]">
           <label
             htmlFor="statusFilter"
             className="block text-sm font-medium mb-1"
@@ -320,6 +326,24 @@ export default function PunchTable() {
             <option value="OPEN">Open</option>
             <option value="CLOSED">Closed</option>
           </select>
+        </div>
+
+        {/* Title Filter */}
+        <div className="flex-1 min-w-[200px]">
+          <label
+            htmlFor="titleFilter"
+            className="block text-sm font-medium mb-1"
+          >
+            Filter by Title
+          </label>
+          <input
+            type="text"
+            id="titleFilter"
+            placeholder="Enter punch title..."
+            value={titleFilter}
+            onChange={(e) => setTitleFilter(e.target.value)}
+            className="w-full border px-3 py-2 rounded-md text-sm"
+          />
         </div>
       </div>
 
