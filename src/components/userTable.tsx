@@ -1,4 +1,3 @@
-// components/UserTable.tsx
 "use client";
 
 import * as React from "react";
@@ -25,7 +24,7 @@ import {
 import { Pencil, Trash2 } from "lucide-react";
 
 type User = {
-  id: number;
+  uuid: string; // changed from id to uuid
   name: string;
   surname?: string;
   email: string;
@@ -44,9 +43,7 @@ export default function UserTable() {
         const token = await getToken();
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/users`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         if (!res.ok) throw new Error("Failed to fetch users");
         setUsers(await res.json());
@@ -60,11 +57,12 @@ export default function UserTable() {
     fetchUsers();
   }, [getToken]);
 
+  // --- EDIT USER ---
   const handleEditUser = async (updatedUser: User) => {
     try {
       const token = await getToken();
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/${updatedUser.id}`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/${updatedUser.uuid}`,
         {
           method: "PUT",
           headers: {
@@ -74,33 +72,37 @@ export default function UserTable() {
           body: JSON.stringify(updatedUser),
         }
       );
-      if (!res.ok) throw new Error("Failed to update user");
+      if (!res.ok) throw new Error(await res.text());
 
       setUsers((prev) =>
-        prev.map((u) => (u.id === updatedUser.id ? updatedUser : u))
+        prev.map((u) => (u.uuid === updatedUser.uuid ? updatedUser : u))
       );
       setEditUser(null);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error("❌ Error updating user:", err.message || err);
+      alert(err.message || "Failed to update user");
     }
   };
 
-  const handleDeleteUser = async (id: number) => {
+  // --- DELETE USER ---
+  const handleDeleteUser = async (uuid: string) => {
     if (!confirm("Are you sure you want to delete this user?")) return;
+
     try {
       const token = await getToken();
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/${id}`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/${uuid}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      if (!res.ok) throw new Error("Failed to delete user");
+      if (!res.ok) throw new Error(await res.text());
 
-      setUsers((prev) => prev.filter((u) => u.id !== id));
-    } catch (err) {
-      console.error(err);
+      setUsers((prev) => prev.filter((u) => u.uuid !== uuid));
+    } catch (err: any) {
+      console.error("❌ Error deleting user:", err.message || err);
+      alert(err.message || "Failed to delete user");
     }
   };
 
@@ -117,13 +119,15 @@ export default function UserTable() {
             variant="secondary"
             size="sm"
             onClick={() => setEditUser(row.original)}
+            className="cursor-pointer"
           >
             <Pencil className="h-4 w-4 mr-1" /> Edit
           </Button>
           <Button
             variant="destructive"
             size="sm"
-            onClick={() => handleDeleteUser(row.original.id)}
+            onClick={() => handleDeleteUser(row.original.uuid)}
+            className="cursor-pointer"
           >
             <Trash2 className="h-4 w-4" />
           </Button>

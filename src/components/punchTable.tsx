@@ -97,6 +97,7 @@ export default function PunchTable() {
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [systems, setSystems] = React.useState<System[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [imageModalUrl, setImageModalUrl] = React.useState<string | null>(null);
 
   const [selectedProjectUuid, setSelectedProjectUuid] = React.useState("");
   const [selectedSystemUuid, setSelectedSystemUuid] = React.useState("");
@@ -143,7 +144,7 @@ export default function PunchTable() {
     }
     const systemsForProject = punches
       .filter((p) => p.project?.uuid === selectedProjectUuid && p.system)
-      .map((p) => p.system!) // non-null
+      .map((p) => p.system!)
       .reduce<System[]>((acc, system) => {
         if (!acc.some((s) => s.uuid === system.uuid)) acc.push(system);
         return acc;
@@ -170,6 +171,54 @@ export default function PunchTable() {
         ? isDateInRange(p.created_at, dateFilter)
         : true
     );
+
+  // CSV Export Function
+  const exportToCSV = () => {
+    if (filteredPunches.length === 0) {
+      alert("No data to export!");
+      return;
+    }
+
+    const headers = [
+      "Title",
+      "Description",
+      "Category",
+      "Project",
+      "System",
+      "Created By",
+      "Modified By",
+      "Created At",
+      "Updated At",
+      "Status",
+    ];
+
+    const rows = filteredPunches.map((p) => [
+      p.title,
+      p.description || "",
+      p.category || "",
+      p.project?.name || "",
+      p.system?.system_number || "",
+      p.created_by?.name || "",
+      p.modified_by?.name || "",
+      p.created_at ? new Date(p.created_at).toLocaleString() : "",
+      p.updated_at ? new Date(p.updated_at).toLocaleString() : "",
+      p.status,
+    ]);
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers, ...rows]
+        .map((e) => e.map((v) => `"${v}"`).join(","))
+        .join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "punches.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleEditPunch = async (updatedPunch: Punch) => {
     try {
@@ -226,6 +275,11 @@ export default function PunchTable() {
       cell: (info) => displayValue(info.getValue()),
     },
     {
+      accessorKey: "category",
+      header: "Category",
+      cell: (info) => displayValue(info.getValue()),
+    },
+    {
       id: "projectName",
       header: "Project",
       accessorFn: (row) => row.project?.name ?? "-",
@@ -254,14 +308,30 @@ export default function PunchTable() {
           ? new Date(info.getValue() as string).toLocaleString()
           : "-",
     },
+    // {
+    //   id: "updatedAt",
+    //   header: "Updated At",
+    //   accessorFn: (row) => row.updated_at ?? null,
+    //   cell: (info) =>
+    //     info.getValue()
+    //       ? new Date(info.getValue() as string).toLocaleString()
+    //       : "-",
+    // },
     {
-      id: "updatedAt",
-      header: "Updated At",
-      accessorFn: (row) => row.updated_at ?? null,
-      cell: (info) =>
-        info.getValue()
-          ? new Date(info.getValue() as string).toLocaleString()
-          : "-",
+      accessorKey: "image_url",
+      header: "Image",
+      cell: ({ getValue }) => {
+        const url = getValue() as string | null;
+        if (!url) return "-";
+        return (
+          <button
+            className="text-blue-600 underline hover:text-blue-800"
+            onClick={() => setImageModalUrl(url)}
+          >
+            Image
+          </button>
+        );
+      },
     },
     {
       accessorKey: "status",
@@ -297,7 +367,7 @@ export default function PunchTable() {
   return (
     <div className="w-full px-6 py-2 space-y-4">
       <div className="flex flex-wrap gap-4 mb-4">
-        {/* Project Filter */}
+        {/* Filters */}
         <div className="flex-1 min-w-[200px]">
           <label
             htmlFor="projectFilter"
@@ -320,7 +390,6 @@ export default function PunchTable() {
           </select>
         </div>
 
-        {/* System Filter */}
         <div className="flex-1 min-w-[200px]">
           <label
             htmlFor="systemFilter"
@@ -344,7 +413,6 @@ export default function PunchTable() {
           </select>
         </div>
 
-        {/* Status Filter */}
         <div className="flex-1 min-w-[200px]">
           <label
             htmlFor="statusFilter"
@@ -364,7 +432,6 @@ export default function PunchTable() {
           </select>
         </div>
 
-        {/* Title Filter */}
         <div className="flex-1 min-w-[200px]">
           <label
             htmlFor="titleFilter"
@@ -382,13 +449,12 @@ export default function PunchTable() {
           />
         </div>
 
-        {/* Created At Filter */}
         <div className="flex-1 min-w-[200px]">
           <label
             htmlFor="dateFilter"
             className="block text-sm font-medium mb-1"
           >
-            Filter by Created At
+            Filter by Date
           </label>
           <select
             id="dateFilter"
@@ -404,6 +470,11 @@ export default function PunchTable() {
         </div>
       </div>
 
+      {/* CSV Export Button */}
+      <div className="flex justify-end mb-2">
+        <Button onClick={exportToCSV}>Export CSV</Button>
+      </div>
+
       <DataTable
         title="Punches"
         description="Recent punches recorded"
@@ -412,6 +483,28 @@ export default function PunchTable() {
         columns={columns}
         data={filteredPunches}
       />
+      {imageModalUrl && (
+        <Dialog
+          open={!!imageModalUrl}
+          onOpenChange={() => setImageModalUrl(null)}
+        >
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Image Preview</DialogTitle>
+            </DialogHeader>
+            <div className="flex justify-center">
+              <img
+                src={imageModalUrl}
+                alt="Punch"
+                className="max-h-[400px] max-w-full object-contain"
+              />
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setImageModalUrl(null)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Edit Punch Modal */}
       {editPunch && (
@@ -475,8 +568,8 @@ export default function PunchTable() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="OPEN">Open</SelectItem>
-                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                    <SelectItem value="RESOLVED">Resolved</SelectItem>
+                    {/* <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                    <SelectItem value="RESOLVED">Resolved</SelectItem> */}
                     <SelectItem value="CLOSED">Closed</SelectItem>
                   </SelectContent>
                 </Select>

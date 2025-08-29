@@ -24,18 +24,24 @@ type Project = {
   name: string;
 };
 
+type Assignment = {
+  user_id: string;
+  project_id: string;
+};
+
 export default function AssignProjectToUserButton() {
   const [open, setOpen] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [formData, setFormData] = useState({
     user_id: "",
     project_id: "",
   });
 
-  // Fetch users and projects when modal opens
+  // Fetch users, projects, and existing assignments when modal opens
   useEffect(() => {
-    if (!open) return; // only fetch when modal opens
+    if (!open) return;
 
     const fetchUsers = async () => {
       try {
@@ -61,12 +67,36 @@ export default function AssignProjectToUserButton() {
       }
     };
 
+    const fetchAssignments = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/projectuser`
+        );
+        const data = await res.json();
+        setAssignments(data);
+      } catch (error) {
+        console.error("Failed to fetch assignments:", error);
+      }
+    };
+
     fetchUsers();
     fetchProjects();
+    fetchAssignments();
   }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check if the user is already assigned to the selected project
+    const exists = assignments.some(
+      (a) =>
+        a.user_id === formData.user_id && a.project_id === formData.project_id
+    );
+
+    if (exists) {
+      alert("❌ This user is already assigned to this project!");
+      return;
+    }
 
     try {
       const response = await fetch(
@@ -76,7 +106,6 @@ export default function AssignProjectToUserButton() {
           headers: {
             "Content-Type": "application/json",
           },
-          // Match DTO field names
           body: JSON.stringify({
             user_id: formData.user_id,
             project_id: formData.project_id,
@@ -90,6 +119,12 @@ export default function AssignProjectToUserButton() {
 
       const result = await response.json();
       console.log("✅ Assigned project to user:", result);
+
+      // Update assignments locally
+      setAssignments((prev) => [
+        ...prev,
+        { user_id: formData.user_id, project_id: formData.project_id },
+      ]);
 
       setFormData({ user_id: "", project_id: "" });
       setOpen(false);

@@ -14,12 +14,12 @@ import {
   DialogFooter,
 } from "./ui/dialog";
 import { Input } from "./ui/input";
-// import { Textarea } from "./ui/input";
 
 type Project = {
-  id: number;
+  uuid: string; // updated from id
   name: string;
   description: string;
+  sector?: string;
   createdAt?: string | null;
 };
 
@@ -29,7 +29,7 @@ export default function ProjectTable() {
 
   const [editOpen, setEditOpen] = React.useState(false);
   const [editForm, setEditForm] = React.useState({
-    id: 0,
+    uuid: "",
     name: "",
     description: "",
   });
@@ -52,27 +52,26 @@ export default function ProjectTable() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (uuid: string) => {
     if (!confirm("Are you sure you want to delete this project?")) return;
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/${id}`,
-        {
-          method: "DELETE",
-        }
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/${uuid}`,
+        { method: "DELETE" }
       );
-      if (!res.ok) throw new Error("Failed to delete project");
-      setData((prev) => prev.filter((p) => p.id !== id));
-    } catch (error) {
-      console.error("❌ Error deleting project:", error);
+      if (!res.ok) throw new Error(await res.text());
+      setData((prev) => prev.filter((p) => p.uuid !== uuid));
+    } catch (error: any) {
+      console.error("❌ Error deleting project:", error.message);
+      alert(error.message);
     }
   };
 
   const handleEditSave = async () => {
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/${editForm.id}`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/${editForm.uuid}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -82,35 +81,26 @@ export default function ProjectTable() {
           }),
         }
       );
-      if (!res.ok) throw new Error("Failed to update project");
+      if (!res.ok) throw new Error(await res.text());
 
-      // Update in UI
       setData((prev) =>
         prev.map((p) =>
-          p.id === editForm.id
+          p.uuid === editForm.uuid
             ? { ...p, name: editForm.name, description: editForm.description }
             : p
         )
       );
       setEditOpen(false);
-    } catch (error) {
-      console.error("❌ Error updating project:", error);
+    } catch (error: any) {
+      console.error("❌ Error updating project:", error.message);
+      alert(error.message);
     }
   };
 
   const projectColumns: ColumnDef<Project>[] = [
-    {
-      accessorKey: "name",
-      header: "Group Name",
-    },
-    {
-      accessorKey: "description",
-      header: "Description",
-    },
-    {
-      accessorKey: "sector",
-      header: "Sector",
-    },
+    { accessorKey: "name", header: "Group Name" },
+    { accessorKey: "description", header: "Description" },
+    { accessorKey: "sector", header: "Sector" },
     {
       id: "actions",
       header: "Actions",
@@ -121,7 +111,7 @@ export default function ProjectTable() {
             size="sm"
             onClick={() => {
               setEditForm({
-                id: row.original.id,
+                uuid: row.original.uuid,
                 name: row.original.name,
                 description: row.original.description,
               });
@@ -134,7 +124,7 @@ export default function ProjectTable() {
           <Button
             variant="destructive"
             size="sm"
-            onClick={() => handleDelete(row.original.id)}
+            onClick={() => handleDelete(row.original.uuid)}
             className="cursor-pointer"
           >
             <Trash2 className="h-4 w-4" />
